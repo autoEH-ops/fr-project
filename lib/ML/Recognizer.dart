@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
 import '../DB/DatabaseHelper.dart';
@@ -51,12 +52,16 @@ class Recognizer {
   }
 
   void registerFaceInDB(String name, String embedding) async {
+    debugPrint("This is the name : $name");
+    debugPrint("This is the embedding: $embedding");
     // row to insert
     Map<String, dynamic> row = {
       DatabaseHelper.columnName: name,
       DatabaseHelper.columnEmbedding: embedding
     };
+    debugPrint("It get here register 1");
     final id = await dbHelper.insert(row);
+    debugPrint("It get here register 2");
     print('inserted row id: $id');
   }
 
@@ -104,11 +109,12 @@ class Recognizer {
     final runs = DateTime.now().millisecondsSinceEpoch;
     interpreter.run(input, output);
     final run = DateTime.now().millisecondsSinceEpoch - runs;
-    print('Time to run inference: $run ms$output');
+    print('Time to run inference: $run ms $output');
+    print('For the output: $output');
 
     //TODO convert dynamic list to double list
     List<double> outputArray = output.first.cast<double>();
-
+    print("This is the outputArray: $outputArray");
     //TODO looks for the nearest embeeding in the database and returns the pair
     Pair pair = findNearest(outputArray);
     print("distance= ${pair.distance}");
@@ -122,6 +128,8 @@ class Recognizer {
     for (MapEntry<String, Recognition> item in registered.entries) {
       final String name = item.key;
       List<double> knownEmb = item.value.embeddings;
+      print("This is emb: $emb");
+      print("This is knownEmb: $knownEmb ");
       double distance = 0;
       for (int i = 0; i < emb.length; i++) {
         double diff = emb[i] - knownEmb[i];

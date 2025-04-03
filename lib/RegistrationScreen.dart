@@ -9,14 +9,14 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 
-class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
+class RecognitionScreen extends StatefulWidget {
+  const RecognitionScreen({Key? key}) : super(key: key);
 
   @override
-  State<RegistrationScreen> createState() => _HomePageState();
+  State<RecognitionScreen> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<RegistrationScreen> {
+class _HomePageState extends State<RecognitionScreen> {
   //TODO declare variables
   late ImagePicker imagePicker;
   File? _image;
@@ -192,7 +192,7 @@ class _HomePageState extends State<RegistrationScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _image != null
+          _image != null && image != null
               ?
               // Container(
               //     margin: const EdgeInsets.only(top: 100),
