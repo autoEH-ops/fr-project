@@ -9,14 +9,14 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 
-class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
+class RecognitionScreen extends StatefulWidget {
+  const RecognitionScreen({Key? key}) : super(key: key);
 
   @override
-  State<RegistrationScreen> createState() => _HomePageState();
+  State<RecognitionScreen> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<RegistrationScreen> {
+class _HomePageState extends State<RecognitionScreen> {
   //TODO declare variables
   late ImagePicker imagePicker;
   File? _image;
@@ -66,10 +66,11 @@ class _HomePageState extends State<RegistrationScreen> {
 
   //TODO face detection code here
   List<Face> faces = [];
+  List<Recognition> recognitions = [];
   doFaceDetection() async {
     //TODO remove rotation of camera images
     InputImage inputImage = InputImage.fromFile(_image!);
-
+    recognitions.clear();
     // image = await _image?.readAsBytes();
     image = await decodeImageFromList(_image!.readAsBytesSync());
     //TODO passing input to face detector and getting detected faces
@@ -99,11 +100,15 @@ class _HomePageState extends State<RegistrationScreen> {
           height: height.toInt());
 
       Recognition recognition = recognizer.recognize(croppedFace, boundingBox);
+      if (recognition.distance > 1.25) {
+        recognition.name = "Unknown";
+      }
       print("This is the distance : ${recognition.distance}");
       print("This is the embeddings : ${recognition.embeddings}");
       print("This is the name : ${recognition.name}");
       // showFaceRegistrationDialogue(
       //     Uint8List.fromList(img.encodeBmp(croppedFace)), recognition);
+      recognitions.add(recognition);
     }
 
     drawRectangleAroundFaces();
@@ -156,8 +161,8 @@ class _HomePageState extends State<RegistrationScreen> {
               ),
               ElevatedButton(
                   onPressed: () {
-                    recognizer.registerFaceInDB(textEditingController.text,
-                        recognition.embeddings.toString());
+                    recognizer.registerFaceInDB(
+                        textEditingController.text, recognition.embeddings);
                     textEditingController.text = "";
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -182,7 +187,7 @@ class _HomePageState extends State<RegistrationScreen> {
     print("${image.width}   ${image.height}");
     setState(() {
       image;
-      faces;
+      recognitions;
     });
   }
 
@@ -211,8 +216,8 @@ class _HomePageState extends State<RegistrationScreen> {
                       width: image.width.toDouble(),
                       height: image.width.toDouble(),
                       child: CustomPaint(
-                        painter:
-                            FacePainter(facesList: faces, imageFile: image),
+                        painter: FacePainter(
+                            facesList: recognitions, imageFile: image),
                       ),
                     ),
                   ),
@@ -276,7 +281,7 @@ class _HomePageState extends State<RegistrationScreen> {
 }
 
 class FacePainter extends CustomPainter {
-  List<Face> facesList;
+  List<Recognition> facesList;
   dynamic imageFile;
   FacePainter({required this.facesList, @required this.imageFile});
 
@@ -291,8 +296,19 @@ class FacePainter extends CustomPainter {
     p.style = PaintingStyle.stroke;
     p.strokeWidth = 3;
 
-    for (Face face in facesList) {
-      canvas.drawRect(face.boundingBox, p);
+    for (Recognition face in facesList) {
+      canvas.drawRect(face.location, p);
+      double faceWidth = face.location.width;
+      double textSize = max(20, faceWidth / 5);
+
+      TextSpan textSpan = TextSpan(
+          text: face.name,
+          style: TextStyle(color: Colors.white, fontSize: textSize));
+      TextPainter tp =
+          TextPainter(text: textSpan, textDirection: TextDirection.ltr);
+      tp.layout();
+      tp.paint(
+          canvas, Offset(face.location.left, face.location.top - textSize));
     }
   }
 

@@ -9,14 +9,14 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 
-class RecognitionScreen extends StatefulWidget {
-  const RecognitionScreen({Key? key}) : super(key: key);
+class RegistrationScreen extends StatefulWidget {
+  const RegistrationScreen({Key? key}) : super(key: key);
 
   @override
-  State<RecognitionScreen> createState() => _HomePageState();
+  State<RegistrationScreen> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<RecognitionScreen> {
+class _HomePageState extends State<RegistrationScreen> {
   //TODO declare variables
   late ImagePicker imagePicker;
   File? _image;
@@ -153,8 +153,8 @@ class _HomePageState extends State<RecognitionScreen> {
               ),
               ElevatedButton(
                   onPressed: () {
-                    recognizer.registerFaceInDB(textEditingController.text,
-                        recognition.embeddings.toString());
+                    recognizer.registerFaceInDB(
+                        textEditingController.text, recognition.embeddings);
                     textEditingController.text = "";
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

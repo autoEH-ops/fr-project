@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -11,12 +12,12 @@ import 'Recognition.dart';
 class Recognizer {
   late Interpreter interpreter;
   late InterpreterOptions _interpreterOptions;
-  static const int WIDTH = 112;
-  static const int HEIGHT = 112;
+  static const int WIDTH = 160;
+  static const int HEIGHT = 160;
   final dbHelper = DatabaseHelper();
   Map<String, Recognition> registered = Map();
   @override
-  String get modelName => 'assets/mobile_face_net.tflite';
+  String get modelName => 'assets/facenet.tflite';
 
   Recognizer({int? numThreads}) {
     _interpreterOptions = InterpreterOptions();
@@ -40,29 +41,31 @@ class Recognizer {
       //  debugPrint(row.toString());
       print(row[DatabaseHelper.columnName]);
       String name = row[DatabaseHelper.columnName];
-      List<double> embd = row[DatabaseHelper.columnEmbedding]
-          .split(',')
-          .map((e) => double.parse(e))
-          .toList()
-          .cast<double>();
+
+      // Decode JSON string to List<double>
+      List<dynamic> jsonList = jsonDecode(row[DatabaseHelper.columnEmbedding]);
+      List<double> embd = jsonList.map((e) => e as double).toList();
+
       Recognition recognition =
           Recognition(row[DatabaseHelper.columnName], Rect.zero, embd, 0);
       registered.putIfAbsent(name, () => recognition);
     }
   }
 
-  void registerFaceInDB(String name, String embedding) async {
+  void registerFaceInDB(String name, List<double> embedding) async {
     debugPrint("This is the name : $name");
     debugPrint("This is the embedding: $embedding");
+    // Convert embedding list to a JSON string
+    String embeddingJson = jsonEncode(embedding);
+    debugPrint("This is the embeddingJson: $embeddingJson");
+
     // row to insert
     Map<String, dynamic> row = {
       DatabaseHelper.columnName: name,
-      DatabaseHelper.columnEmbedding: embedding
+      DatabaseHelper.columnEmbedding: embeddingJson,
     };
-    debugPrint("It get here register 1");
     final id = await dbHelper.insert(row);
-    debugPrint("It get here register 2");
-    print('inserted row id: $id');
+    debugPrint('inserted row id: $id');
   }
 
   Future<void> loadModel() async {
@@ -82,8 +85,8 @@ class Recognizer {
         .toList();
     Float32List float32Array = Float32List.fromList(flattenedList);
     int channels = 3;
-    int height = 112;
-    int width = 112;
+    int height = 160;
+    int width = 160;
     Float32List reshapedArray = Float32List(1 * height * width * channels);
     for (int c = 0; c < channels; c++) {
       for (int h = 0; h < height; h++) {
@@ -94,16 +97,16 @@ class Recognizer {
         }
       }
     }
-    return reshapedArray.reshape([1, 112, 112, 3]);
+    return reshapedArray.reshape([1, 160, 160, 3]);
   }
 
   Recognition recognize(img.Image image, Rect location) {
     //TODO crop face from image resize it and convert it to float array
     var input = imageToArray(image);
-    print(input.shape.toString());
+    // print(input.shape.toString());
 
     //TODO output array
-    List output = List.filled(1 * 192, 0).reshape([1, 192]);
+    List output = List.filled(1 * 512, 0).reshape([1, 512]);
 
     //TODO performs inference
     final runs = DateTime.now().millisecondsSinceEpoch;
